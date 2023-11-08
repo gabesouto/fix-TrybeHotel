@@ -13,20 +13,40 @@ namespace TrybeHotel.Services
         private readonly TokenOptions _tokenOptions;
         public TokenGenerator()
         {
-           _tokenOptions = new TokenOptions {
+            _tokenOptions = new TokenOptions
+            {
                 Secret = "4d82a63bbdc67c1e4784ed6587f3730c",
                 ExpiresDay = 1
-           };
+            };
 
         }
         public string Generate(UserDto user)
         {
-            throw new NotImplementedException();
+            JwtSecurityTokenHandler tokenHandler = new();
+            var key = Encoding.ASCII.GetBytes(_tokenOptions.Secret);
+            SecurityTokenDescriptor tokenDescriptor = new()
+            {
+                Subject = AddClaims(user),
+                Expires = System.DateTime.UtcNow.AddDays(_tokenOptions.ExpiresDay),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature
+                )
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
         private ClaimsIdentity AddClaims(UserDto user)
         {
-            throw new NotImplementedException();
+            var claims = new ClaimsIdentity();
+            claims.AddClaim(new Claim(ClaimTypes.Email, user.email));
+            if (user.userType == "admin")
+            {
+                claims.AddClaim(new Claim(ClaimTypes.Role, "admin"));
+            }
+            return claims;
         }
     }
 }
